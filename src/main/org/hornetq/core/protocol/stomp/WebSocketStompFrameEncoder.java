@@ -20,8 +20,8 @@ import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
 /**
@@ -59,13 +59,13 @@ public class WebSocketStompFrameEncoder extends OneToOneEncoder
          
          if (frame != null)
          {
-            WebSocketFrame wsFrame = new DefaultWebSocketFrame(frame.asString());
+            WebSocketFrame wsFrame = new TextWebSocketFrame(frame.asString());
 
             // Text frame
             ChannelBuffer data = wsFrame.getBinaryData();
             ChannelBuffer encoded = channel.getConfig().getBufferFactory().getBuffer(data.order(),
                                                                                      data.readableBytes() + 2);
-            encoded.writeByte((byte)wsFrame.getType());
+            encoded.writeByte((byte)0);
             encoded.writeBytes(data, data.readableBytes());
             encoded.writeByte((byte)0xFF);
             return encoded;

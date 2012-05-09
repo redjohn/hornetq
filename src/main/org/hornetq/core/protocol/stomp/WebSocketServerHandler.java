@@ -15,14 +15,10 @@
  */
 package org.hornetq.core.protocol.stomp;
 
-import java.security.MessageDigest;
-
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -36,8 +32,9 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import org.jboss.netty.util.CharsetUtil;
 
 /**
@@ -49,6 +46,7 @@ import org.jboss.netty.util.CharsetUtil;
 public class WebSocketServerHandler extends SimpleChannelUpstreamHandler {
 
     private static final String WEBSOCKET_PATH = "/stomp";
+    private WebSocketServerHandshaker handshaker;
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
@@ -80,6 +78,7 @@ public class WebSocketServerHandler extends SimpleChannelUpstreamHandler {
             res.addHeader(Names.UPGRADE, Values.WEBSOCKET);
             res.addHeader(Names.CONNECTION, Values.UPGRADE);
 
+            /*
             // Fill in the headers and contents depending on handshake method.
             if (req.containsHeader(Names.SEC_WEBSOCKET_KEY1) &&
                 req.containsHeader(Names.SEC_WEBSOCKET_KEY2)) {
@@ -122,6 +121,18 @@ public class WebSocketServerHandler extends SimpleChannelUpstreamHandler {
             ctx.getChannel().write(res);
 
             p.replace("http-encoder", "ws-encoder", new WebSocketStompFrameEncoder());
+            return;
+            */
+            
+            // Handshake
+            WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
+                    this.getWebSocketLocation(req), null, false);
+            this.handshaker = wsFactory.newHandshaker(req);
+            if (this.handshaker == null) {
+                wsFactory.sendUnsupportedWebSocketVersionResponse(ctx.getChannel());
+            } else {
+                this.handshaker.handshake(ctx.getChannel(), req).addListener(WebSocketServerHandshaker.HANDSHAKE_LISTENER);
+            }
             return;
         }
 
